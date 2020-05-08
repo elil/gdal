@@ -51,7 +51,6 @@ Vector drivers
    geojsonseq
    geomedia
    georss
-   gft
    gmlas
    gml
    gmt
@@ -68,6 +67,7 @@ Vector drivers
    jml
    kml
    libkml
+   mapml
    mdb
    memory
    mitab

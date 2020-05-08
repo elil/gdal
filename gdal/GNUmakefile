@@ -170,20 +170,18 @@ docs:
 
 man:
 	(cd doc; make man)
+	mkdir -p man/man1
+	cp doc/build/man/*.1 man/man1
 
 all:	default ogr-all
 
 install-docs:
-	$(INSTALL_DIR) $(DESTDIR)$(INST_DOCS)/gdal
-	cp -r doc/build/html/* $(DESTDIR)$(INST_DOCS)/gdal
+	$(INSTALL_DIR) $(DESTDIR)$(INST_DOCS)
+	cp -r doc/build/html/* $(DESTDIR)$(INST_DOCS)
 
 install-man:
 	$(INSTALL_DIR) $(DESTDIR)$(INST_MAN)/man1
-	for f in $(wildcard doc/build/man/*.1) ; do $(INSTALL_DATA) $$f $(DESTDIR)$(INST_MAN)/man1 ; done
-
-web-update:	docs
-	$(INSTALL_DIR) $(INST_HTML)
-	cp html/*.* $(INST_HTML)
+	for f in $(wildcard man/man1/*.1) ; do $(INSTALL_DATA) $$f $(DESTDIR)$(INST_MAN)/man1 ; done
 
 install:	install-actions
 
@@ -229,7 +227,9 @@ endif
 ifneq ($(BINDINGS),)
 	(cd swig; $(MAKE) install)
 endif
+ifdef INST_BASH_COMPLETION
 	(cd scripts; $(MAKE) install)
+endif
 	for f in LICENSE.TXT data/*.* ; do $(INSTALL_DATA) $$f $(DESTDIR)$(INST_DATA) ; done
 	$(LIBTOOL_FINISH) $(DESTDIR)$(INST_LIB)
 	$(INSTALL_DIR) $(DESTDIR)$(INST_LIB)/pkgconfig

@@ -246,11 +246,14 @@ GDALDataset * GDALDriver::Create( const char * pszFilename,
         // memory driver doesn't expect files with those names to be deleted
         // on a file system...
         // This is somewhat messy. Ideally there should be a way for the
-        // driver to overload the default behaviour
+        // driver to overload the default behavior
         if( !EQUAL(GetDescription(), "MEM") &&
             !EQUAL(GetDescription(), "Memory") )
         {
-            QuietDelete( pszFilename );
+            char** papszAllowedDrivers = nullptr;
+            papszAllowedDrivers = CSLAddString(papszAllowedDrivers, GetDescription() );
+            QuietDelete( pszFilename, papszAllowedDrivers );
+            CSLDestroy( papszAllowedDrivers );
         }
     }
 
@@ -332,7 +335,7 @@ GDALCreate( GDALDriverH hDriver, const char * pszFilename,
 /**
  * \brief Create a new multidimensioanl dataset with this driver.
  * 
- * Only drivers that advertize the GDAL_DCAP_MULTIDIM_RASTER capability and
+ * Only drivers that advertise the GDAL_DCAP_MULTIDIM_RASTER capability and
  * implement the pfnCreateMultiDimensional method might return a non nullptr
  * GDALDataset.
  *
@@ -1017,11 +1020,14 @@ GDALDataset *GDALDriver::CreateCopy( const char * pszFilename,
         // memory driver doesn't expect files with those names to be deleted
         // on a file system...
         // This is somewhat messy. Ideally there should be a way for the
-        // driver to overload the default behaviour
+        // driver to overload the default behavior
         if( !EQUAL(GetDescription(), "MEM") &&
             !EQUAL(GetDescription(), "Memory") )
         {
-            QuietDelete( pszFilename );
+            char** papszAllowedDrivers = nullptr;
+            papszAllowedDrivers = CSLAddString(papszAllowedDrivers, GetDescription() );
+            QuietDelete( pszFilename, papszAllowedDrivers );
+            CSLDestroy( papszAllowedDrivers );
         }
     }
 
@@ -1030,7 +1036,7 @@ GDALDataset *GDALDriver::CreateCopy( const char * pszFilename,
         CSLPartialFindString(papszOptions, "QUIET_DELETE_ON_CREATE_COPY=");
     if( iIdxQuietDeleteOnCreateCopy >= 0 )
     {
-        if( papszOptionsToDelete == nullptr )
+        //if( papszOptionsToDelete == nullptr )
             papszOptionsToDelete = CSLDuplicate(papszOptions);
         papszOptions =
             CSLRemoveStrings(papszOptionsToDelete, iIdxQuietDeleteOnCreateCopy,
@@ -1161,10 +1167,14 @@ GDALDatasetH CPL_STDCALL GDALCreateCopy( GDALDriverH hDriver,
  * using Identify().
  *
  * @param pszName the dataset name to try and delete.
+ * @param papszAllowedDrivers NULL to consider all candidate drivers, or a NULL
+ * terminated list of strings with the driver short names that must be
+ * considered.
  * @return CE_None if the dataset does not exist, or is deleted without issues.
  */
 
-CPLErr GDALDriver::QuietDelete( const char *pszName )
+CPLErr GDALDriver::QuietDelete( const char *pszName,
+                                const char *const *papszAllowedDrivers )
 
 {
     VSIStatBufL sStat;
@@ -1187,7 +1197,7 @@ CPLErr GDALDriver::QuietDelete( const char *pszName )
 
     CPLPushErrorHandler(CPLQuietErrorHandler);
     GDALDriver * const poDriver =
-        GDALDriver::FromHandle( GDALIdentifyDriver( pszName, nullptr ) );
+        GDALDriver::FromHandle( GDALIdentifyDriver( pszName, papszAllowedDrivers ) );
     CPLPopErrorHandler();
 
     if( poDriver == nullptr )
@@ -1219,8 +1229,8 @@ CPLErr GDALDriver::QuietDelete( const char *pszName )
  *
  * The driver will attempt to delete the named dataset in a driver specific
  * fashion.  Full featured drivers will delete all associated files,
- * database objects, or whatever is appropriate.  The default behaviour when
- * no driver specific behaviour is provided is to attempt to delete all the
+ * database objects, or whatever is appropriate.  The default behavior when
+ * no driver specific behavior is provided is to attempt to delete all the
  * files that are returned by GDALGetFileList() on the dataset handle.
  *
  * It is unwise to have open dataset handles on this dataset when it is

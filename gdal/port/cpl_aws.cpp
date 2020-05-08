@@ -487,7 +487,8 @@ CPLString IVSIS3LikeHandleHelper::BuildCanonicalizedHeaders(
     const struct curl_slist* psIter = psExistingHeaders;
     for(; psIter != nullptr; psIter = psIter->next)
     {
-        if( STARTS_WITH_CI(psIter->data, pszHeaderPrefix) )
+        if( STARTS_WITH_CI(psIter->data, pszHeaderPrefix) ||
+            STARTS_WITH_CI(psIter->data, "Content-MD5") )
         {
             const char* pszColumn = strstr(psIter->data, ":");
             if( pszColumn )
@@ -810,7 +811,11 @@ bool VSIS3HandleHelper::GetConfigurationFromAWSConfigFiles(
                                                 CPLString& osCredentials)
 {
     // See http://docs.aws.amazon.com/cli/latest/userguide/cli-config-files.html
-    const char* pszProfile = CPLGetConfigOption("AWS_DEFAULT_PROFILE", "");
+    // If AWS_DEFAULT_PROFILE is set (obsolete, no longer documented), use it in priority
+    // Otherwise use AWS_PROFILE
+    // Otherwise fallback to "default"
+    const char* pszProfile = CPLGetConfigOption("AWS_DEFAULT_PROFILE",
+        CPLGetConfigOption("AWS_PROFILE", ""));
     const CPLString osProfile(pszProfile[0] != '\0' ? pszProfile : "default");
 
 #ifdef WIN32
@@ -887,7 +892,7 @@ bool VSIS3HandleHelper::GetConfigurationFromAWSConfigFiles(
     {
         osConfig = osDotAws;
         osConfig += SEP_STRING;
-        osConfig += "credentials";
+        osConfig += "config";
     }
     fp = VSIFOpenL( osConfig, "rb" );
     if( fp != nullptr )
@@ -1255,7 +1260,8 @@ bool VSIS3HandleHelper::CanRestartOnError( const char* pszErrorMsg,
     if( pbUpdateMap != nullptr )
         *pbUpdateMap = true;
 
-    if( !STARTS_WITH(pszErrorMsg, "<?xml") )
+    if( !STARTS_WITH(pszErrorMsg, "<?xml") &&
+        !STARTS_WITH(pszErrorMsg, "<Error>") )
     {
         if( bSetError )
         {
@@ -1484,6 +1490,58 @@ CPLString VSIS3HandleHelper::GetSignedURL(CSLConstList papszOptions)
 
     AddQueryParameter("X-Amz-Signature", osSignature);
     return m_osURL;
+}
+
+/************************************************************************/
+/*                        UpdateMapFromHandle()                         */
+/************************************************************************/
+
+std::mutex VSIS3UpdateParams::gsMutex{};
+std::map< CPLString, VSIS3UpdateParams > VSIS3UpdateParams::goMapBucketsToS3Params{};
+
+void VSIS3UpdateParams::UpdateMapFromHandle( IVSIS3LikeHandleHelper* poHandleHelper )
+{
+    std::lock_guard<std::mutex> guard(gsMutex);
+
+    VSIS3HandleHelper * poS3HandleHelper =
+        dynamic_cast<VSIS3HandleHelper *>(poHandleHelper);
+    CPLAssert( poS3HandleHelper );
+    if( !poS3HandleHelper )
+        return;
+    goMapBucketsToS3Params[ poS3HandleHelper->GetBucket() ] =
+        VSIS3UpdateParams ( poS3HandleHelper );
+}
+
+/************************************************************************/
+/*                         UpdateHandleFromMap()                        */
+/************************************************************************/
+
+void VSIS3UpdateParams::UpdateHandleFromMap( IVSIS3LikeHandleHelper* poHandleHelper )
+{
+    std::lock_guard<std::mutex> guard(gsMutex);
+
+    VSIS3HandleHelper * poS3HandleHelper =
+        dynamic_cast<VSIS3HandleHelper *>(poHandleHelper);
+    CPLAssert( poS3HandleHelper );
+    if( !poS3HandleHelper )
+        return;
+    std::map< CPLString, VSIS3UpdateParams>::iterator oIter =
+        goMapBucketsToS3Params.find(poS3HandleHelper->GetBucket());
+    if( oIter != goMapBucketsToS3Params.end() )
+    {
+        oIter->second.UpdateHandlerHelper(poS3HandleHelper);
+    }
+}
+
+/************************************************************************/
+/*                            ClearCache()                              */
+/************************************************************************/
+
+void VSIS3UpdateParams::ClearCache()
+{
+    std::lock_guard<std::mutex> guard(gsMutex);
+
+    goMapBucketsToS3Params.clear();
 }
 
 #endif

@@ -324,8 +324,7 @@ CPLErr GDALMRFDataset::IBuildOverviews(
                 config = nullptr;
             }
             catch (const CPLErr& ) {
-                if (config)
-                    CPLDestroyXMLNode(config);
+                CPLDestroyXMLNode(config);
                 throw; // Rethrow
             }
 
@@ -1526,7 +1525,7 @@ GDALDataset *GDALMRFDataset::GetSrcDS() {
     // Try open the source dataset as is
     poSrcDS = GDALDataset::FromHandle(GDALOpenShared(source.c_str(), GA_ReadOnly));
 
-    // It the open failes, try again with the current dataset path prepended
+    // It the open fails, try again with the current dataset path prepended
     if (!poSrcDS && make_absolute(source, fname))
         poSrcDS = GDALDataset::FromHandle(GDALOpenShared(source.c_str(), GA_ReadOnly));
 

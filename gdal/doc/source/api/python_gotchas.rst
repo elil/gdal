@@ -190,7 +190,7 @@ But according to `email from Even Rouault <https://lists.osgeo.org/pipermail/gda
 
    Destroy() was perhaps necessary with old-gen bindings, but I'm not even sure 
    of that... Perhaps this shouldn't have been exposed at all... But, as 
-   mentionned in the slides, it is true that there are situations where you 
+   mentioned in the slides, it is true that there are situations where you 
    shouldn't call Destroy() at all.
 
 
@@ -338,7 +338,7 @@ Python crashes in GDAL functions when you upgrade or downgrade numpy
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 Much of GDAL's Python bindings are implemented in C++. Much of the core of numpy is implemented in C. The C++ part of GDAL's Python bindings interacts with the C part of numpy through numpy's ABI (application binary interface). 
-This requires GDAL's Python bindings to be compiled using numpy header files that define numpy C data structures. Those data structures sometimes change between numpy versions. When this happens, the new version of numpy is not be compatible at the binary level with the old version, and the GDAL Python bindings must be recompiled before they will work with the new verison of numpy. 
+This requires GDAL's Python bindings to be compiled using numpy header files that define numpy C data structures. Those data structures sometimes change between numpy versions. When this happens, the new version of numpy is not be compatible at the binary level with the old version, and the GDAL Python bindings must be recompiled before they will work with the new version of numpy. 
 And when they are recompiled, they probably won't work with the old version.
 
 If you obtained a precompiled version of GDAL's Python bindings, such as the Windows packages from `http://gisinternals.com/sdk.php <http://gisinternals.com/sdk.php>`__ be sure you look up what version of numpy was used to compile them, and install that version of numpy on your machine.

@@ -153,7 +153,7 @@ struct GDALWarpAppOptions
 
     /*! the resampling method. Available methods are: near, bilinear,
         cubic, cubicspline, lanczos, average, mode, max, min, med,
-        q1, q3 */
+        q1, q3, sum */
     GDALResampleAlg eResampleAlg;
 
     /*! nodata masking values for input bands (different values can be supplied
@@ -3464,18 +3464,29 @@ GDALWarpCreateOutput( int nSrcCount, GDALDatasetH *pahSrcDS, const char *pszFile
 class CutlineTransformer : public OGRCoordinateTransformation
 {
 public:
+    void         *hSrcImageTransformer = nullptr;
 
-    void         *hSrcImageTransformer;
+    explicit CutlineTransformer(void* hTransformArg): hSrcImageTransformer(hTransformArg) {}
 
     virtual OGRSpatialReference *GetSourceCS() override { return nullptr; }
     virtual OGRSpatialReference *GetTargetCS() override { return nullptr; }
 
+    virtual ~CutlineTransformer()
+    {
+        GDALDestroyTransformer(hSrcImageTransformer);
+    }
 
     virtual int Transform( int nCount,
                            double *x, double *y, double *z, double* /* t */,
                            int *pabSuccess ) override {
         return GDALGenImgProjTransform( hSrcImageTransformer, TRUE,
                                         nCount, x, y, z, pabSuccess );
+    }
+
+    virtual OGRCoordinateTransformation *Clone() const override
+    {
+        return new CutlineTransformer(
+            GDALCloneTransformer(hSrcImageTransformer));
     }
 };
 
@@ -3627,13 +3638,11 @@ TransformCutlineToSource( GDALDatasetH hSrcDS, OGRGeometryH hCutline,
 /* -------------------------------------------------------------------- */
 /*      Transform the geometry to pixel/line coordinates.               */
 /* -------------------------------------------------------------------- */
-    CutlineTransformer oTransformer;
-
     /* The cutline transformer will *invert* the hSrcImageTransformer */
     /* so it will convert from the cutline SRS to the source pixel/line */
     /* coordinates */
-    oTransformer.hSrcImageTransformer =
-        GDALCreateGenImgProjTransformer2( hSrcDS, nullptr, papszTO );
+    CutlineTransformer oTransformer(
+        GDALCreateGenImgProjTransformer2( hSrcDS, nullptr, papszTO ) );
 
     CSLDestroy( papszTO );
 
@@ -3751,8 +3760,6 @@ TransformCutlineToSource( GDALDatasetH hSrcDS, OGRGeometryH hCutline,
             break;
         }
     }
-
-    GDALDestroyGenImgProjTransformer( oTransformer.hSrcImageTransformer );
 
     if( eErr == OGRERR_FAILURE )
     {
@@ -4337,6 +4344,8 @@ static bool GetResampleAlg(const char* pszResampling,
         eResampleAlg = GRA_Q1;
     else if ( EQUAL(pszResampling, "q3") )
         eResampleAlg = GRA_Q3;
+    else if ( EQUAL(pszResampling, "sum") )
+        eResampleAlg = GRA_Sum;
     else
     {
         CPLError(CE_Failure, CPLE_IllegalArg, "Unknown resampling method: %s.",

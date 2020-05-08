@@ -33,7 +33,7 @@
 
 namespace NGWAPI {
 
-std::string GetPermisions(const std::string &osUrl, const std::string &osResourceId)
+std::string GetPermissions(const std::string &osUrl, const std::string &osResourceId)
 {
     return osUrl + "/api/resource/" + osResourceId + "/permission";
 }
@@ -332,6 +332,18 @@ OGRwkbGeometryType NGWGeomTypeToOGRGeomType(const std::string &osGeomType)
         return wkbMultiLineString;
     else if ( osGeomType == "MULTIPOLYGON")
         return wkbMultiPolygon;
+    else if( osGeomType == "POINTZ")
+        return wkbPoint25D;
+    else if ( osGeomType == "LINESTRINGZ")
+        return wkbLineString25D;
+    else if ( osGeomType == "POLYGONZ")
+        return wkbPolygon25D;
+    else if ( osGeomType == "MULTIPOINTZ")
+        return wkbMultiPoint25D;
+    else if ( osGeomType == "MULTILINESTRINGZ")
+        return wkbMultiLineString25D;
+    else if ( osGeomType == "MULTIPOLYGONZ")
+        return wkbMultiPolygon25D;
     else
         return wkbUnknown;
 }
@@ -352,6 +364,18 @@ std::string OGRGeomTypeToNGWGeomType(OGRwkbGeometryType eType)
             return "MULTILINESTRING";
         case wkbMultiPolygon:
             return "MULTIPOLYGON";
+        case wkbPoint25D:
+            return "POINTZ";
+        case wkbLineString25D:
+            return "LINESTRINGZ";
+        case wkbPolygon25D:
+            return "POLYGONZ";
+        case wkbMultiPoint25D:
+            return "MULTIPOINTZ";
+        case wkbMultiLineString25D:
+            return "MULTILINESTRINGZ";
+        case wkbMultiPolygon25D:
+            return "MULTIPOLYGONZ";
         default:
             return "";
     }
@@ -406,7 +430,7 @@ Permissions CheckPermissions(const std::string &osUrl,
     Permissions stOut;
     CPLErrorReset();
     CPLJSONDocument oPermissionReq;
-    bool bResult = oPermissionReq.LoadUrl( GetPermisions( osUrl, osResourceId ),
+    bool bResult = oPermissionReq.LoadUrl( GetPermissions( osUrl, osResourceId ),
         papszHTTPOptions );
 
     CPLJSONObject oRoot = oPermissionReq.GetRoot();

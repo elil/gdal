@@ -174,7 +174,7 @@ def copy_shape_to_geojson(gjname, compress=None):
         return False, dst_name
 
     ######################################################
-    # Setup schema (all test shapefiles use common schmea)
+    # Setup schema (all test shapefiles use common schema)
     ogrtest.quick_create_layer_def(lyr,
                                    [('FID', ogr.OFTReal),
                                     ('NAME', ogr.OFTString)])
@@ -651,6 +651,9 @@ def test_ogr_geojson_23():
     feat = ogr.Feature(lyr.GetLayerDefn())
     feat.SetGeometry(ogr.CreateGeometryFromWkt('POINT(2 20)'))
     lyr.CreateFeature(feat)
+    assert lyr.GetExtent() == (1.0, 2.0, 10.0, 20.0)
+    assert lyr.GetExtent(geom_field=0) == (1.0, 2.0, 10.0, 20.0)
+    assert lyr.GetExtent(geom_field=1, can_return_null=True) is None
     lyr = None
     ds = None
 
@@ -1095,6 +1098,14 @@ def test_ogr_geojson_38():
     gdal.Unlink(tmpfilename)
 
     assert '"dt": "2014-11-20T12:34:56+01:00", "dt2": "2014-11-20T00:00:00", "date": "2014-11-20", "time": "12:34:56"' in data, data
+
+    ds = gdal.OpenEx("""{"type": "FeatureCollection", "features": [
+{ "type": "Feature", "properties": { "dt": "2014-11-20 12:34:56+0100", "dt2": "2014\/11\/20", "date":"2014\/11\/20", "time":"12:34:56", "no_dt": "2014-11-20 12:34:56+0100", "no_dt2": "2014-11-20 12:34:56+0100" }, "geometry": null }
+] }""", open_options = ['DATE_AS_STRING=YES'])
+    lyr = ds.GetLayer(0)
+    feat_defn = lyr.GetLayerDefn()
+    for i in range(feat_defn.GetFieldCount()):
+        assert feat_defn.GetFieldDefn(i).GetType() == ogr.OFTString
 
 ###############################################################################
 # Test id top-object level
@@ -2501,7 +2512,7 @@ def test_ogr_geojson_62():
     assert srs.ExportToWkt().find('32631') >= 0
 
 ###############################################################################
-# Extensive test of field tye promotion
+# Extensive test of field type promotion
 
 
 def test_ogr_geojson_63():
@@ -2668,6 +2679,18 @@ def test_ogr_geojson_id_field_and_id_type():
     got = read_file('/vsimem/out.json')
     gdal.Unlink('/vsimem/out.json')
     assert '"id": 35043411, "properties": { "AREA": 215229.266, "EAS_ID": 168 }' in got
+
+    gdal.VectorTranslate('/vsimem/out.json', 'data/poly.shp', format='GeoJSON', layerCreationOptions=['ID_GENERATE=YES'], limit=1)
+    got = read_file('/vsimem/out.json')
+    assert '"id": 0, "properties": { "AREA": 215229.266, "EAS_ID": 168, "PRFEDEA": "35043411" }' in got
+
+    gdal.VectorTranslate('/vsimem/out.json', 'data/poly.shp', format='GeoJSON', layerCreationOptions=['ID_GENERATE=YES', 'ID_TYPE=Integer'], limit=1)
+    got = read_file('/vsimem/out.json')
+    assert '"id": 0, "properties": { "AREA": 215229.266, "EAS_ID": 168, "PRFEDEA": "35043411" }' in got
+
+    gdal.VectorTranslate('/vsimem/out.json', 'data/poly.shp', format='GeoJSON', layerCreationOptions=['ID_GENERATE=YES', 'ID_TYPE=String'], limit=1)
+    got = read_file('/vsimem/out.json')
+    assert '"id": "0", "properties": { "AREA": 215229.266, "EAS_ID": 168, "PRFEDEA": "35043411" }' in got
 
 ###############################################################################
 

@@ -42,6 +42,12 @@ Connecting to a database
 
       PG:"dbname='databasename' host='addr' port='5432' user='x' password='y'"
 
+   *or* starting with GDAL 3.1:
+
+   ::
+
+      PG:service=servicename
+
 | It's also possible to omit the database name and connect to a
   *default* database, with the same name as the user name.
 | **Note**: We use PQconnectdb() to make the connection, so any other
@@ -77,9 +83,9 @@ default, rather than evaluating them internally when using the
 ExecuteSQL() call on the OGRDataSource, or the -sql command option to
 ogr2ogr. Attribute query expressions are also passed directly through to
 PostgreSQL. It's also possible to request the ogr Pg driver to handle
-SQL commands with the `OGR SQL <ogr_sql.html>`__ engine, by passing
-**"OGRSQL"** string to the ExecuteSQL() method, as the name of the SQL
-dialect.
+SQL commands with the :ref:`OGR SQL <ogr_sql_dialect>` engine, by
+passing **"OGRSQL"** string to the ExecuteSQL() method, as the name of
+the SQL dialect.
 
 The PostgreSQL driver in OGR supports the
 OGRDataSource::StartTransaction(), OGRDataSource::CommitTransaction()
@@ -121,6 +127,8 @@ Dataset open options
 -  **USER**\ =string: User name.
 -  **PASSWORD**\ =string: Password.
 -  **HOST**\ =string: Server hostname.
+-  **DBNAME**\ =string: Database name.
+-  **SERVICE**\ =string: Service name (GDAL >= 3.1)
 -  **ACTIVE_SCHEMA**\ =string: Active schema.
 -  **SCHEMAS**\ =string: Restricted sets of schemas to explore (comma
    separated).
@@ -186,7 +194,7 @@ Layer Creation Options
    (GDAL >=2.4, or YES for earlier versions) by default. Creates a
    spatial index (GiST) on the geometry column to speed up queries (Has
    effect only when PostGIS is available). Set to NONE (GDAL >= 2.4, or
-   FALSE for earlier verions) to disable. BRIN is only available with
+   FALSE for earlier versions) to disable. BRIN is only available with
    PostgreSQL >= 9.4 and PostGIS >= 2.3. SPGIST is only available with
    PostgreSQL >= 11 and PostGIS >= 2.5
 -  **TEMPORARY**: (From GDAL 1.8.0) Set to OFF by default. Creates a
@@ -197,7 +205,7 @@ Layer Creation Options
    indexing since PostgreSQL 9.3.
 -  **NONE_AS_UNKNOWN**: (From GDAL 1.8.1) Can bet set to TRUE to force
    non-spatial layers (wkbNone) to be created as spatial tables of type
-   GEOMETRY (wkbUnknown), which was the behaviour prior to GDAL 1.8.0.
+   GEOMETRY (wkbUnknown), which was the behavior prior to GDAL 1.8.0.
    Defaults to NO, in which case a regular table is created and not
    recorded in the PostGIS geometry_columns table.
 -  **FID**: (From GDAL 1.9.0) Name of the FID column to create. Defaults

@@ -113,6 +113,7 @@ void CPL_STDCALL GDALAllRegister()
 #ifdef FRMT_aaigrid
     GDALRegister_AAIGrid();
     GDALRegister_GRASSASCIIGrid();
+    GDALRegister_ISG();
 #endif
 
 #ifdef FRMT_sdts
@@ -580,6 +581,10 @@ void CPL_STDCALL GDALAllRegister()
 
 #ifdef FRMT_sigdem
     GDALRegister_SIGDEM();
+#endif
+
+#ifdef FRMT_exr
+    GDALRegister_EXR();
 #endif
 
     // NOTE: you need to generally your own driver before that line.

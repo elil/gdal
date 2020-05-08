@@ -50,7 +50,7 @@ matrix:
       compiler: gcc
       language: cpp
       sudo: required
-      dist: trusty
+      dist: xenial
       cache:
         apt: true
         directories:
@@ -139,7 +139,7 @@ matrix:
       compiler: gcc
       language: cpp
       sudo: required
-      dist: trusty
+      dist: xenial
       cache:
         apt: true
       env:
@@ -150,7 +150,7 @@ matrix:
       compiler: gcc
       language: cpp
       sudo: required
-      dist: trusty
+      dist: xenial
       cache:
         apt: true
       env:
@@ -166,13 +166,13 @@ install:
 script:
   - ./gdal/ci/travis/${BUILD_NAME}/script.sh
 
-notifications:
-  email:
-    recipients:
-      - gdal-commits@lists.osgeo.org
-
-  irc:
-    channels:
-      - "irc.freenode.org#gdal"
-    use_notice: true
-    on_success: change
+# notifications:
+#   email:
+#     recipients:
+#       - gdal-commits@lists.osgeo.org
+#
+#   irc:
+#     channels:
+#       - "irc.freenode.org#gdal"
+#     use_notice: true
+#     on_success: change
